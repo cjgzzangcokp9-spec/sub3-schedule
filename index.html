@@ -143,6 +143,7 @@ body{
   overflow:hidden;
 }
 .cell:hover{transform:translateY(-2px);box-shadow:0 6px 14px rgba(0,0,0,0.12);z-index:2;}
+.cell:focus-visible{outline:2px solid var(--track-red);outline-offset:2px;}
 .cell.empty{background:transparent;border:none;cursor:default;}
 .cell.empty:hover{transform:none;box-shadow:none;}
 
@@ -151,6 +152,10 @@ body{
 .cell.dday{border-left:4px solid var(--lane-gold);background:#FFF8E8;}
 .cell.rest{border-left:4px solid var(--rest-blue);}
 
+/* desktop: date-col/body-col stack vertically, chevron+weekday-label hidden */
+.cell .date-col{display:flex;flex-direction:row;align-items:baseline;gap:4px;}
+.cell .weekday-label{display:none;}
+.cell .chevron{display:none;}
 .cell .date-num{
   font-family:var(--mono);font-weight:700;font-size:13px;
 }
@@ -221,10 +226,69 @@ footer.note{
   font-size:12.5px;color:var(--ink-soft);line-height:1.7;
   border-top:1px solid var(--line);padding-top:16px;
 }
-@media (max-width:640px){
-  .cell{min-height:80px;padding:4px 5px;}
-  .cell .title{font-size:10px;-webkit-line-clamp:2;}
-  .header .stats{gap:14px;}
+
+/* ===== MOBILE: switch grid -> vertical list ===== */
+@media (max-width:680px){
+  .wrap{padding:18px 14px 60px;}
+  .header{flex-direction:column;align-items:flex-start;gap:10px;padding-bottom:14px;margin-bottom:18px;}
+  .header .stats{gap:18px;align-self:stretch;justify-content:flex-start;}
+  .stat{text-align:left;}
+
+  .lane-progress{height:64px;margin-bottom:18px;}
+  .lane-progress .seg{font-size:9px;padding-left:5px;white-space:nowrap;}
+
+  .legend{gap:10px 14px;margin-bottom:20px;font-size:11px;}
+
+  .month{margin-bottom:30px;}
+  .month-title{font-size:17px;margin-bottom:10px;}
+
+  /* hide weekday header row on mobile list view */
+  .wd{display:none;}
+
+  .cal-grid{
+    grid-template-columns:1fr;
+    gap:8px;
+  }
+  .cell.empty{display:none;}
+
+  .cell{
+    min-height:0;
+    flex-direction:row;
+    align-items:center;
+    padding:11px 12px;
+    gap:12px;
+    -webkit-tap-highlight-color:rgba(209,74,31,0.15);
+  }
+  .cell:active{transform:scale(0.985);background:var(--paper-dim);}
+  .cell:hover{transform:none;box-shadow:none;}
+
+  .cell .date-col{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    min-width:44px;
+  }
+  .cell .weekday-label{
+    display:block;font-family:var(--mono);font-size:10px;color:var(--ink-soft);margin-top:1px;
+  }
+  .cell .date-num{font-size:18px;}
+  .cell .date-num.weekend{color:var(--track-red-dim);}
+  .cell .day-tag{margin-top:0;}
+  .cell .body-col{flex:1;min-width:0;}
+  .cell .title{
+    font-size:13px;-webkit-line-clamp:2;margin-top:2px;
+  }
+  .cell .stars{margin-top:3px;font-size:11px;}
+  .cell .chevron{
+    display:block;font-size:18px;color:var(--line);flex-shrink:0;
+  }
+  .cell .today-badge{position:static;margin-left:auto;align-self:center;order:99;}
+
+  /* modal full-screen-ish on mobile */
+  .modal-overlay{padding:0;align-items:flex-end;}
+  .modal{
+    max-width:100%;width:100%;max-height:88vh;
+    border-radius:14px 14px 0 0;border:none;border-top:2px solid var(--ink);
+    padding:22px 18px 28px;
+  }
 }
 </style>
 </head>
@@ -553,13 +617,24 @@ function buildCalendar(){
       const dayTagText = entry.phase==='dday' ? 'D-DAY' : (entry.phase==='prep' ? `준비 ${entry.programDay}일` : `${entry.programDay}일차`);
 
       cell.innerHTML = `
-        <div class="date-num ${isWeekend?'weekend':''}">${d}</div>
-        <div class="day-tag">${dayTagText}</div>
-        ${content.stars ? `<div class="stars">${starString(content.stars)}</div>` : ''}
-        <div class="title">${content.title||''}</div>
+        <div class="date-col">
+          <div class="date-num ${isWeekend?'weekend':''}">${d}</div>
+          <div class="weekday-label">${WEEKDAYS[weekdayIdx]}</div>
+        </div>
+        <div class="body-col">
+          <div class="day-tag">${dayTagText}</div>
+          ${content.stars ? `<div class="stars">${starString(content.stars)}</div>` : ''}
+          <div class="title">${content.title||''}</div>
+        </div>
+        <div class="chevron">›</div>
         ${iso===TODAY_ISO ? '<div class="today-badge">TODAY</div>' : ''}
       `;
+      cell.setAttribute('role','button');
+      cell.setAttribute('tabindex','0');
       cell.addEventListener('click', ()=>openModal(iso, entry.phase, entry.programDay));
+      cell.addEventListener('keydown', (e)=>{
+        if(e.key==='Enter' || e.key===' '){ e.preventDefault(); openModal(iso, entry.phase, entry.programDay); }
+      });
       grid.appendChild(cell);
     }
 
