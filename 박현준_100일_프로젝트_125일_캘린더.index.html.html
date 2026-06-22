@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>박현준님 100일 프로젝트 — 춘천마라톤 서브3</title>
+<style>
+:root{
+  --track-red:#D14A1F;
+  --track-red-dim:#7A2F15;
+  --ink:#16140F;
+  --ink-soft:#3A3530;
+  --paper:#F6F1E6;
+  --paper-dim:#EAE2D2;
+  --lane-gold:#C49A3A;
+  --prep-gray:#9C958A;
+  --rest-blue:#5C7A8A;
+  --line:#D8CFBC;
+  --display: "Pretendard", "Apple SD Gothic Neo", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", "SF Mono", "Consolas", monospace;
+}
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--display);
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 80px;}
+
+/* HEADER */
+.header{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:space-between;
+  align-items:flex-end;
+  gap:20px;
+  padding-bottom:20px;
+  border-bottom:3px solid var(--ink);
+  margin-bottom:24px;
+}
+.header h1{
+  font-size:clamp(26px,4vw,40px);
+  font-weight:800;
+  letter-spacing:-0.02em;
+  margin:0 0 6px;
+  line-height:1.1;
+}
+.header .sub{
+  font-family:var(--mono);
+  font-size:13px;
+  color:var(--ink-soft);
+  letter-spacing:0.02em;
+}
+.header .stats{
+  display:flex;
+  gap:22px;
+  font-family:var(--mono);
+}
+.stat{text-align:right;}
+.stat .num{font-size:26px;font-weight:700;color:var(--track-red);display:block;line-height:1;}
+.stat .lbl{font-size:11px;color:var(--ink-soft);letter-spacing:0.05em;}
+
+/* LANE PROGRESS BAR — signature element */
+.lane-progress{
+  position:relative;
+  height:54px;
+  margin-bottom:28px;
+  border-radius:2px;
+  overflow:hidden;
+  background:repeating-linear-gradient(
+    90deg,
+    var(--ink) 0px, var(--ink) 1px,
+    transparent 1px, transparent 38px
+  );
+  background-color:#1f1c16;
+}
+.lane-progress .seg{
+  position:absolute;top:0;bottom:0;
+  display:flex;align-items:center;
+  font-family:var(--mono);font-size:10px;color:rgba(246,241,230,0.65);
+  letter-spacing:0.08em;
+  padding-left:8px;
+  border-right:2px dashed rgba(246,241,230,0.25);
+}
+.lane-progress .seg.prep{background:rgba(156,149,138,0.35);}
+.lane-progress .seg.main{background:rgba(209,74,31,0.35);}
+.lane-progress .seg.dday{background:var(--lane-gold);color:var(--ink);font-weight:700;border-right:none;}
+.lane-progress .today-mark{
+  position:absolute;top:-3px;bottom:-3px;width:3px;background:var(--paper);
+  box-shadow:0 0 0 1px var(--ink);
+}
+
+/* LEGEND */
+.legend{
+  display:flex;flex-wrap:wrap;gap:18px;
+  margin-bottom:30px;
+  font-family:var(--mono);
+  font-size:12px;
+  color:var(--ink-soft);
+}
+.legend .item{display:flex;align-items:center;gap:6px;}
+.legend .dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
+
+/* MONTH BLOCK */
+.month{margin-bottom:46px;}
+.month-title{
+  font-size:20px;font-weight:800;margin:0 0 12px;
+  display:flex;align-items:baseline;gap:10px;
+}
+.month-title .phase-tag{
+  font-family:var(--mono);font-size:11px;font-weight:600;
+  padding:3px 8px;border-radius:3px;letter-spacing:0.04em;
+}
+.tag-prep{background:var(--prep-gray);color:#fff;}
+.tag-main{background:var(--track-red);color:#fff;}
+.tag-mixed{background:linear-gradient(90deg,var(--prep-gray) 50%,var(--track-red) 50%);color:#fff;}
+.tag-dday{background:var(--lane-gold);color:var(--ink);}
+
+.cal-grid{
+  display:grid;
+  grid-template-columns:repeat(7,1fr);
+  gap:5px;
+}
+.wd{
+  font-family:var(--mono);
+  font-size:11px;
+  text-align:center;
+  color:var(--ink-soft);
+  padding-bottom:4px;
+  letter-spacing:0.06em;
+}
+.cell{
+  position:relative;
+  min-height:104px;
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:4px;
+  padding:6px 7px;
+  cursor:pointer;
+  transition:transform .12s ease, box-shadow .12s ease;
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+.cell:hover{transform:translateY(-2px);box-shadow:0 6px 14px rgba(0,0,0,0.12);z-index:2;}
+.cell.empty{background:transparent;border:none;cursor:default;}
+.cell.empty:hover{transform:none;box-shadow:none;}
+
+.cell.prep{border-left:4px solid var(--prep-gray);}
+.cell.main{border-left:4px solid var(--track-red);}
+.cell.dday{border-left:4px solid var(--lane-gold);background:#FFF8E8;}
+.cell.rest{border-left:4px solid var(--rest-blue);}
+
+.cell .date-num{
+  font-family:var(--mono);font-weight:700;font-size:13px;
+}
+.cell .date-num.weekend{color:var(--track-red-dim);}
+.cell .day-tag{
+  font-family:var(--mono);font-size:9.5px;color:var(--ink-soft);
+  margin-top:1px;
+}
+.cell .stars{
+  font-size:10px;letter-spacing:-1px;color:var(--lane-gold);margin-top:2px;line-height:1;
+}
+.cell .title{
+  font-size:11.5px;font-weight:700;margin-top:4px;line-height:1.25;
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;
+}
+.cell.dday .title{color:var(--track-red);}
+.cell .today-badge{
+  position:absolute;top:5px;right:5px;
+  background:var(--ink);color:var(--paper);
+  font-family:var(--mono);font-size:8px;font-weight:700;
+  padding:2px 5px;border-radius:2px;letter-spacing:0.05em;
+}
+
+/* MODAL */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(22,20,15,0.7);
+  display:none;align-items:center;justify-content:center;
+  padding:20px;z-index:50;
+}
+.modal-overlay.open{display:flex;}
+.modal{
+  background:var(--paper);
+  max-width:520px;width:100%;
+  max-height:85vh;overflow-y:auto;
+  border-radius:6px;
+  border:2px solid var(--ink);
+  padding:26px 26px 22px;
+  position:relative;
+}
+.modal .close-btn{
+  position:absolute;top:14px;right:16px;
+  background:none;border:none;font-size:22px;cursor:pointer;color:var(--ink-soft);
+  line-height:1;padding:4px;
+}
+.modal .m-date{
+  font-family:var(--mono);font-size:13px;color:var(--ink-soft);letter-spacing:0.03em;
+}
+.modal .m-tag{
+  display:inline-block;font-family:var(--mono);font-size:11px;font-weight:700;
+  padding:3px 9px;border-radius:3px;margin:8px 0 4px;letter-spacing:0.03em;
+}
+.modal h2{
+  font-size:21px;font-weight:800;margin:6px 0 4px;line-height:1.25;
+}
+.modal .m-stars{font-size:15px;color:var(--lane-gold);margin-bottom:14px;}
+.modal .m-summary{
+  font-size:14.5px;line-height:1.65;color:var(--ink);
+  background:#fff;border:1px solid var(--line);border-radius:5px;
+  padding:14px 16px;white-space:pre-line;
+}
+.modal .m-note{
+  margin-top:14px;font-size:12.5px;color:var(--ink-soft);
+  font-family:var(--mono);line-height:1.6;
+}
+
+footer.note{
+  margin-top:10px;
+  font-size:12.5px;color:var(--ink-soft);line-height:1.7;
+  border-top:1px solid var(--line);padding-top:16px;
+}
+@media (max-width:640px){
+  .cell{min-height:80px;padding:4px 5px;}
+  .cell .title{font-size:10px;-webkit-line-clamp:2;}
+  .header .stats{gap:14px;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <div>
+      <h1>박현준님 100일 프로젝트</h1>
+      <div class="sub">춘천마라톤 · 풀코스 기록단축 · 최근 1000m 3'20" → 목표 서브3 (3:00:00)</div>
+    </div>
+    <div class="stats">
+      <div class="stat"><span class="num" id="statTotal">126</span><span class="lbl">전체 일수</span></div>
+      <div class="stat"><span class="num">25</span><span class="lbl">준비일</span></div>
+      <div class="stat"><span class="num">100</span><span class="lbl">본훈련일</span></div>
+    </div>
+  </div>
+
+  <div class="lane-progress" id="laneProgress"></div>
+
+  <div class="legend">
+    <span class="item"><span class="dot" style="background:var(--prep-gray)"></span>준비기간 (1~25일차 반복, 6/22~7/16)</span>
+    <span class="item"><span class="dot" style="background:var(--track-red)"></span>본훈련 (1~100일차, 7/17~10/24)</span>
+    <span class="item"><span class="dot" style="background:var(--rest-blue)"></span>완전휴식/휴식일</span>
+    <span class="item"><span class="dot" style="background:var(--lane-gold)"></span>D-DAY (10/25)</span>
+  </div>
+
+  <div id="calendarRoot"></div>
+
+  <footer class="note">
+    ⓒ 오픈케어 100일 프로젝트 기반 일정표 · 날짜를 클릭하면 그날 훈련 상세 내용을 볼 수 있습니다 · 준비기간 중에는 절대 무리하지 말고 컨디션 유지에 집중하세요.
+  </footer>
+
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <button class="close-btn" id="closeBtn">✕</button>
+    <div class="m-date" id="mDate"></div>
+    <span class="m-tag" id="mTag"></span>
+    <h2 id="mTitle"></h2>
+    <div class="m-stars" id="mStars"></div>
+    <div class="m-summary" id="mSummary"></div>
+    <div class="m-note" id="mNote"></div>
+  </div>
+</div>
+
+<script>
+// 오픈케어 100일 프로젝트(풀코스) 기록단축 프로그램 - 박현준님
+// 최근 1000m: 3분20초 / 풀코스 예상기록: 3시간00분 (서브3)
+const PROGRAM_DATA = [
+  {day:1, stars:4, title:"컨디셔닝 1000m x7", summary:"워밍업17분 → 바디모빌리티A/B → 컨디셔닝 1000m×7R(400m 1'38\"~1'34\") → 에어로빅12분 → 쿨다운3분"},
+  {day:2, stars:0, title:"에어로빅 러닝 70분", summary:"바디모빌리티A → 에어로빅 러닝 70분(C레벨), 1000m 5'45\"→4'55\" 단계적 상승"},
+  {day:3, stars:5, title:"지구력스피드400m+컨디셔닝1200m", summary:"100m dash×3 → 지구력스피드 400m(1'32\")+불완전회복100m ×5R×3set → 1200m 컨디셔닝70% → 취침전 V복근발차기"},
+  {day:4, stars:0, title:"레그레이즈업+에어로빅30분", summary:"스탠딩 레그레이즈업 500회 → 에어로빅 러닝 30분, 1000m 5'45\"→4'55\""},
+  {day:5, stars:4, title:"지구력스피드400m(75%)", summary:"워밍업15분 → 지구력스피드 400m(1'38\")+조깅400m(2'02\") ×5R×2set → 러닝15분 → 취침전 싯팅업스트록"},
+  {day:6, stars:5, title:"엔듀런스3000m×2 + 200m×5", summary:"워밍업5000m → 100m dash×2 → 엔듀런스 3000m(400m 1'42\")×2R → 200m(41\")×5R"},
+  {day:7, stars:4, title:"뉴서킷+에어로빅30분", summary:"팔치기 → 뉴서킷트레이닝×3R → 에어로빅 러닝 30분(1000m 5'15\")"},
+  {day:8, stars:0, title:"에어로빅 러닝 70분", summary:"바디모빌리티A → 에어로빅 러닝 70분(C레벨), 1000m 5'45\"→4'55\""},
+  {day:9, stars:4, title:"지구력스피드400m×10R", summary:"100m dash×2 → 지구력스피드 400m(1'32\")×10R(휴식40초) → 러닝15분"},
+  {day:10, stars:5, title:"엔듀런스2000m×2×2set+400m×2", summary:"워밍업17분 → 엔듀런스 2000m(1'40\")×2R×2set → 400m(1'24\")×2R"},
+  {day:11, stars:0, title:"힙모빌리티+에어로빅러닝", summary:"힙모빌리티 6종×3R → 팔치기 → 에어로빅 1000m×4단계+2000m(5'45\"→4'45\")"},
+  {day:12, stars:4, title:"컨디셔닝80% 800m+200m×4set", summary:"레그레이즈업500회 → 워밍업15분 → 에어로빅800m+컨디셔닝200m ×4set(연속)"},
+  {day:13, stars:5, title:"800m×9R(80%)", summary:"워밍업4000m → 100m dash×2 → 800m(1'34\")×9R(휴식80초) → 러닝15분"},
+  {day:14, stars:4, title:"뉴서킷+에어로빅40분", summary:"팔치기 → 뉴서킷×3R → 에어로빅 러닝 40분(1000m 5'15\")"},
+  {day:15, stars:0, title:"에어로빅 러닝 90분(A)", summary:"바디모빌리티A → 에어로빅 90분(A레벨), 1000m 5'45\"→4'55\""},
+  {day:16, stars:0, title:"에어로빅 러닝 70분(C)", summary:"바디모빌리티A → 에어로빅 70분(C레벨), 1000m 5'45\"→4'55\""},
+  {day:17, stars:5, title:"엔듀런스 400m×30R (트랙)", summary:"워밍업15분 → 엔듀런스 400m×15R+휴식5분+400m×15R=총30R(1'38\"+불완전회복) → 8레인 트랙 권장(서브3)"},
+  {day:18, stars:0, title:"컨디셔닝1000m×5R", summary:"워밍업17분 → 컨디셔닝 1000m(1'38\"~1'34\")×5R(휴식90초) → 에어로빅12분"},
+  {day:19, stars:0, title:"팔치기+에어로빅70분", summary:"팔치기×3R → 에어로빅 러닝 70분(C레벨), 1000m 5'45\"→4'55\""},
+  {day:20, stars:4, title:"300m+100m ×5R×3set", summary:"한발밸런스 → 워밍업4000m → (300m 67\"+100m 40\")×5R×3set → 쿨다운7분"},
+  {day:21, stars:5, title:"스피드1000m+조깅1000m×8R", summary:"100m dash×3 → (스피드1000m 1'38\"+조깅1000m 2'12\")×8R(5R후 휴식3분) → 러닝15분"},
+  {day:22, stars:0, title:"힙모빌리티+팔치기+하복근+구근밸", summary:"한발밸런스 → 힙모빌리티6종×3R → 팔치기×5R → New하복근×7R → 9가지 근육밸런스×3R"},
+  {day:23, stars:4, title:"컨디셔닝200m×10R", summary:"에어로빅15분 → 컨디셔닝 200m(43\")×10R(휴식70초) → 러닝15분"},
+  {day:24, stars:5, title:"거리주(LSD) 25km", summary:"거리주 25,000m/25km, 0~15km 4'45\"/km, 15~25km 4'35\"/km → 쿨다운5분"},
+  {day:25, stars:0, title:"팔치기+에어로빅60분(A)", summary:"한발밸런스 → 팔치기×3R → 에어로빅 60분(A레벨), 1000m 5'40\"→4'45\""},
+  {day:26, stars:0, title:"에어로빅90분(A)+하루보강", summary:"바디모빌리티A → 에어로빅 90분(A레벨) 5'40\"→4'45\" → 힙모빌리티B+New하복근×7R"},
+  {day:27, stars:5, title:"지구력스피드200m×30R", summary:"워밍업4000m → 100m dash×2 → 지구력스피드 200m(46\")+불완전회복100m(27\") ×10R×3set"},
+  {day:28, stars:0, title:"컨디셔닝80% 800m+200m×7R", summary:"워밍업25분 → 러닝800m(1'56\")+컨디셔닝200m(40\") ×7R(4R후 러닝5분) → 하루보강 허리밸런스"},
+  {day:29, stars:0, title:"에어로빅90분(A)", summary:"한발밸런스 → 바디모빌리티A → 에어로빅 90분(A레벨) 5'40\"→4'45\" / 추가선택 60분 가능"},
+  {day:30, stars:4, title:"300m+100m ×5R×3set", summary:"워밍업12분 → (300m 67\"+100m 40\")×5R×3set → 쿨다운5분"},
+  {day:31, stars:5, title:"엔듀런스4000m×2 + 200m×5", summary:"100m dash×3 → 엔듀런스 4000m(1'38\")×2R(휴식7분) → 200m(41\")×5R → 러닝15분"},
+  {day:32, stars:0, title:"리커버리 러닝 40분", summary:"시팅업스트록×5R → 리커버리 러닝 40분(걷는 정도 페이스, 케이던스 80~90)"},
+  {day:33, stars:0, title:"에어로빅90분(A)", summary:"한발밸런스 → 바디모빌리티A → 에어로빅 90분(A레벨) 5'40\"→4'45\""},
+  {day:34, stars:5, title:"스피드1000m×10R", summary:"100m dash×3 → 스피드1000m(1'36\")+휴식60초 ×10R(5R후 휴식3분) → 러닝5분"},
+  {day:35, stars:0, title:"팔치기+에어로빅70분(C)", summary:"팔치기×3round → 에어로빅 70분(C레벨), 1000m 5'45\"→4'55\""},
+  {day:36, stars:0, title:"컨디셔닝200m×10R", summary:"워밍업4000m → 컨디셔닝 200m(43\")×10R(휴식70초) → 러닝10분"},
+  {day:37, stars:5, title:"시간주 120분", summary:"바디모빌리티A → 시간주 120분, 1000m 페이스 5'50\"~4'50\" 자유 선택"},
+  {day:38, stars:5, title:"400m×5R×3set", summary:"워밍업15분 → 100m dash×3 → 400m(1'26\")×5R×3set → 러닝15분"},
+  {day:39, stars:0, title:"힙모빌리티+팔치기+에어로빅", summary:"힙모빌리티6종×3R → 팔치기×3R → 에어로빅 1000m×4단계+2000m(5'45\"→4'45\")"},
+  {day:40, stars:4, title:"엔듀런스3000m×1R", summary:"한발밸런스 → 워밍업4000m → 100m dash×3 → 엔듀런스 3000m(1'34\") → 러닝15~20분"},
+  {day:41, stars:5, title:"스피드1000m+조깅1000m×5R", summary:"한발밸런스 → 워밍업4000m → 바디모빌리티B → (스피드1000m 1'42\"+조깅1000m 1'54\")×5R → 쿨다운3분"},
+  {day:42, stars:0, title:"힙모빌리티+팔치기+에어로빅", summary:"힙모빌리티6종×3R → 팔치기×3R → 에어로빅 1000m×4단계+6000m(5'45\"→4'45\")"},
+  {day:43, stars:0, title:"에어로빅90분(A)+하루보강", summary:"바디모빌리티A → 에어로빅 90분(A레벨) 5'40\"→4'45\" → 힙모빌리티B+New하복근×7R"},
+  {day:44, stars:0, title:"에어로빅30분+컨디셔닝1000m", summary:"바디모빌리티A → 에어로빅 30분(5'45\"→5'15\") → 컨디셔닝 1000m(1'36\")×1R → 쿨다운5분"},
+  {day:45, stars:5, title:"거리주(LSD) 30km", summary:"워밍업5분 → 거리주 30,000m/30km, 0~10km 4'45\"/km, 10~30km 4'35\"/km → 쿨다운5분"},
+  {day:46, stars:0, title:"팔치기+에어로빅60분(A)", summary:"한발밸런스 → 팔치기×3R → 에어로빅 60분(A레벨), 1000m 5'40\"→4'45\""},
+  {day:47, stars:4, title:"엔듀런스5000m(85~90%)", summary:"한발밸런스 → 워밍업4000m → 100m dash×3 → 엔듀런스 5000m(1'38\") → 러닝15분"},
+  {day:48, stars:5, title:"엔듀런스2000m×3 + 200m×3", summary:"워밍업5000m → 100m dash×2 → 엔듀런스 2000m(1'40\")×3R(휴식3분) → 200m(40\")×3R"},
+  {day:49, stars:0, title:"에어로빅 러닝 70분(C)", summary:"바디모빌리티A → 에어로빅 70분(C레벨), 1000m 5'45\"→4'55\""},
+  {day:50, stars:0, title:"힙모빌리티+팔치기+에어로빅", summary:"힙모빌리티6종×3R → 팔치기×3R → 에어로빅 1000m×4단계+2000m(5'45\"→4'45\")"},
+  {day:51, stars:4, title:"지구력스피드400m×10R", summary:"팔치기 → 워밍업15분 → 100m dash×2 → 지구력스피드 400m(1'32\")×10R(휴식40초) → 러닝15분"},
+  {day:52, stars:5, title:"엔듀런스12000m + 400m×4", summary:"워밍업15분 → 100m dash×2 → 엔듀런스 12000m(1'42\") → 400m(1'28\")×4R → 쿨다운5분"},
+  {day:53, stars:0, title:"에어로빅 러닝 60분(C)", summary:"바디모빌리티A → 에어로빅 60분(C레벨), 1000m 5'45\"→4'55\""},
+  {day:54, stars:0, title:"완전 휴식", summary:"완전 휴식일 — 전체 회복에 집중"},
+  {day:55, stars:5, title:"시간주 150분", summary:"바디모빌리티A → 시간주 150분, 1000m 페이스 6'10\"~4'40\" 자유 선택"},
+  {day:56, stars:4, title:"에어로빅+200m×10R", summary:"한발밸런스 → 팔치기×3R → 에어로빅 1000m×5단계(6'10\"→5'30\") → 200m(41\")×10R → 러닝7분"},
+  {day:57, stars:0, title:"레그레이즈업+에어로빅70분(C)", summary:"스탠딩 레그레이즈업 500회 → 에어로빅 70분(C레벨, 6'00\"~7'30\") → 취침전 힙모빌리티B+하복근"},
+  {day:58, stars:4, title:"컨디셔닝200m×10R", summary:"한발밸런스 → 팔치기×3R → 워밍업20분 → 컨디셔닝 200m(43\")×10R(휴식70초)"},
+  {day:59, stars:5, title:"거리주(LSD) 30km", summary:"워밍업5분 → 거리주 30,000m/30km, 0~10km 4'45\"/km, 10~30km 4'35\"/km"},
+  {day:60, stars:0, title:"팔치기+에어로빅60분(C)", summary:"팔치기×3R → 에어로빅 60분(C레벨, 6'00\"~7'30\") → 취침전 힙모빌리티B+하복근"},
+  {day:61, stars:4, title:"스피드200m+회복러닝×10R", summary:"바디모빌리티B → 워밍업20분 → (스피드200m 41\"+회복러닝100m 60초)×10R → 쿨다운5분"},
+  {day:62, stars:5, title:"1000m×8R(80%)", summary:"한발밸런스 → 워밍업15분 → 100m dash×3 → 1000m(1'34\")×4R+휴식5분+×4R=총8R → 쿨다운5분"},
+  {day:63, stars:0, title:"레그레이즈업+에어로빅70분(C)", summary:"스탠딩 레그레이즈업 300회 → 에어로빅 70분(C레벨, 6'00\"~7'30\") → 취침전 힙모빌리티B+하복근"},
+  {day:64, stars:4, title:"지구력스피드400m×10R", summary:"팔치기 → 워밍업15분 → 100m dash×2 → 지구력스피드 400m(1'32\")×10R(휴식50초) → 러닝7분"},
+  {day:65, stars:0, title:"에어로빅 러닝 50분", summary:"바디모빌리티A → 에어로빅 50분, 1000m 6'00\"~7'00\" → 취침전 하복근 / 금~화 5일 1세트 안내"},
+  {day:66, stars:5, title:"엔듀런스8000m + 300m×4", summary:"워밍업15분 → 100m dash×3 → 엔듀런스 8000m(1'40\"→1'38\") → 스피드300m(100m21\")+걷기2분×4R"},
+  {day:67, stars:0, title:"팔치기+에어로빅50분", summary:"팔치기×3R → 에어로빅 50분, 1000m 6'00\"~7'00\" → 취침전 하복근"},
+  {day:68, stars:5, title:"시간주 120분", summary:"바디모빌리티A → 시간주 120분, 1000m 페이스 6'10\"~4'40\" 자유 선택"},
+  {day:69, stars:0, title:"에어로빅 러닝 50분(C)", summary:"바디모빌리티A → 에어로빅 50분(C레벨), 1000m 7'00\"~8'00\""},
+  {day:70, stars:5, title:"엔듀런스2000m×2+1000m×2", summary:"한발밸런스 → 워밍업15분 → 100m dash×3 → 2000m(1'36\")×2R+휴식5분 → 1000m(1'32\")×2R"},
+  {day:71, stars:0, title:"에어로빅 60분(A)+하루보강", summary:"바디모빌리티A → 에어로빅 60분(A레벨) 5'40\"→4'45\" → 힙모빌리티B+New하복근×7R"},
+  {day:72, stars:4, title:"컨디셔닝200m×7R", summary:"한발밸런스 → 팔치기×3set → 워밍업30분 → 컨디셔닝 200m(43\")×7R(휴식70초) → 쿨다운5분"},
+  {day:73, stars:5, title:"거리주(LSD) 40km", summary:"워밍업5분 → 거리주 40,000m/40km, 단계별 페이스(5'05\"→4'45\"/km) → 쿨다운5분"},
+  {day:74, stars:0, title:"에어로빅 러닝 50분(C)", summary:"바디모빌리티A → 에어로빅 50분(C레벨), 1000m 7'00\"~8'00\""},
+  {day:75, stars:4, title:"컨디셔닝80% 3000m×2", summary:"한발밸런스 → 워밍업4000m → 100m dash×3 → 컨디셔닝 3000m(1'36\")×2R(휴식4분) → 러닝15분"},
+  {day:76, stars:0, title:"엔듀런스7000m(75%)+1000m×2(80%)", summary:"뉴서킷×1R → 워밍업15분 → 100m dash×2 → 엔듀런스 7000m(1000m 4'15\") → 1000m(3'55\")×2R"},
+  {day:77, stars:0, title:"뉴서킷+에어로빅70분(C)", summary:"뉴서킷×2R → 에어로빅 70분(C레벨, 6'00\"~7'30\") → 취침전 힙모빌리티B"},
+  {day:78, stars:4, title:"에어로빅30분+컨디셔닝1000m", summary:"바디모빌리티A → 에어로빅 30분(5'45\"→5'15\") → 컨디셔닝 1000m(1'36\")×1R → 쿨다운5분"},
+  {day:79, stars:5, title:"엔듀런스 20000m", summary:"워밍업15분 → 100m dash×3 → 엔듀런스 20000m, 1000m 페이스 4'10\" → 쿨다운5분"},
+  {day:80, stars:0, title:"리커버리 러닝 50분", summary:"팔치기×3R → 리커버리 러닝 50분(1000m 8'00\"~10'00\", 케이던스 83~87)"},
+  {day:81, stars:0, title:"컨디셔닝80% 2000m×2", summary:"워밍업4000m → 100m dash×3 → 컨디셔닝 2000m(1'36\")×2R(휴식5분) → 쿨다운7분"},
+  {day:82, stars:0, title:"에어로빅 러닝 90분(A)", summary:"바디모빌리티A → 에어로빅 90분(A레벨) 5'40\"→4'45\" / 추가선택 60분 가능"},
+  {day:83, stars:5, title:"3000m+2000m+1000m(서브)", summary:"워밍업4000m → 100m dash×3 → 3000m(1'34\") → 2000m(1'32\") → 선택1000m(1'30\") → 쿨다운7분"},
+  {day:84, stars:0, title:"힙모빌리티+뉴서킷+에어로빅50분", summary:"힙모빌리티6종×3R → 뉴서킷×1R → 에어로빅 50분(C레벨), 1000m 7'00\"→6'20\""},
+  {day:85, stars:0, title:"컨디셔닝80% 1200m+400m×7", summary:"뉴서킷×1R → 워밍업15분 → 에어로빅1200m(1'58\")+컨디셔닝400m(1'26\") ×7R → 쿨다운5분"},
+  {day:86, stars:0, title:"에어로빅 러닝 50분", summary:"바디모빌리티 → 에어로빅 50분, 1000m 7'00\"→6'30\" 단계적 상승"},
+  {day:87, stars:5, title:"엔듀런스12000m + 800m×2", summary:"워밍업15분 → 100m dash×2 → 엔듀런스 12000m(1000m4'15\") → 800m(1'32\")×2R → 러닝10분"},
+  {day:88, stars:0, title:"힙모빌리티+뉴서킷+에어로빅50분", summary:"힙모빌리티6종×3R → 뉴서킷×1R → 에어로빅 50분(C레벨), 1000m 7'00\"→6'20\""},
+  {day:89, stars:0, title:"에어로빅40분+컨디셔닝1000m×2", summary:"바디모빌리티A → 에어로빅 40분(5'45\"→5'15\") → 컨디셔닝 1000m(1'34\")×2R(휴식3분) → 쿨다운5분"},
+  {day:90, stars:5, title:"엔듀런스4000m + 800m×2", summary:"워밍업3200m → 100m dash×3 → 엔듀런스 4000m(1'34\") → 800m(1'28\")×2R → 쿨다운7분"},
+  {day:91, stars:0, title:"뉴서킷+에어로빅60분(C)", summary:"바디모빌리티B → 뉴서킷×1R → 에어로빅 60분(C레벨), 1000m 7'00\"→6'30\""},
+  {day:92, stars:0, title:"팔치기+에어로빅70분(A)", summary:"팔치기×5R → 에어로빅 70분(A레벨), 1000m 5'40\"→4'45\""},
+  {day:93, stars:0, title:"뉴서킷+에어로빅40분+컨디셔닝1000m", summary:"뉴서킷×1R → 에어로빅 40분(7'00\"→6'30\") → 컨디셔닝 1000m(1'36\")×1R → 쿨다운5분"},
+  {day:94, stars:5, title:"엔듀런스 10000m", summary:"워밍업15분 → 100m dash×2 → 엔듀런스 10000m, 0~4km 4'10\"/km, 4~10km 4'05\"/km → 러닝10분"},
+  {day:95, stars:0, title:"에어로빅 러닝 90분(A)", summary:"바디모빌리티A → 에어로빅 90분(A레벨), 1000m 5'40\"→4'45\""},
+  {day:96, stars:0, title:"뉴서킷+에어로빅50분(C)", summary:"뉴서킷×1R → 에어로빅 50분(C레벨), 1000m 7'00\"→6'20\""},
+  {day:97, stars:5, title:"3000m(90%) + 1000m", summary:"워밍업3200m → 100m dash×3 → 3000m(1'34\")×1R → 1000m(1'30\")×1R → 쿨다운10분"},
+  {day:98, stars:0, title:"휴식", summary:"휴식일"},
+  {day:99, stars:0, title:"에어로빅 러닝 60분(A)", summary:"바디모빌리티A → 에어로빅 60분(A레벨), 1000m 5'40\"→4'45\""},
+  {day:100, stars:0, title:"에어로빅30분+컨디셔닝1000m", summary:"바디모빌리티A → 에어로빅 30분(5'45\"→5'15\") → 컨디셔닝 1000m(1'36\")×1R → 쿨다운7분"},
+];
+
+const PREP_NOTE = "준비기간(1~25일차 프로그램 반복): 본 100일 훈련 전, 무리하지 않고 몸 컨디션 유지에 집중하는 기간입니다.";
+const DDAY_INFO = {title:"D-DAY: 춘천마라톤", summary:"스탠딩 레그레이즈업200회+모빌리티A → 워밍업15분 → 100m dash×3 → 모빌리티B → 팔치기(30초+30초)×3~5R → 대회출발! 도전 오픈케어!"};
+
+const SCHEDULE = [{"date": "2026-06-22", "phase": "prep", "programDay": 1}, {"date": "2026-06-23", "phase": "prep", "programDay": 2}, {"date": "2026-06-24", "phase": "prep", "programDay": 3}, {"date": "2026-06-25", "phase": "prep", "programDay": 4}, {"date": "2026-06-26", "phase": "prep", "programDay": 5}, {"date": "2026-06-27", "phase": "prep", "programDay": 6}, {"date": "2026-06-28", "phase": "prep", "programDay": 7}, {"date": "2026-06-29", "phase": "prep", "programDay": 8}, {"date": "2026-06-30", "phase": "prep", "programDay": 9}, {"date": "2026-07-01", "phase": "prep", "programDay": 10}, {"date": "2026-07-02", "phase": "prep", "programDay": 11}, {"date": "2026-07-03", "phase": "prep", "programDay": 12}, {"date": "2026-07-04", "phase": "prep", "programDay": 13}, {"date": "2026-07-05", "phase": "prep", "programDay": 14}, {"date": "2026-07-06", "phase": "prep", "programDay": 15}, {"date": "2026-07-07", "phase": "prep", "programDay": 16}, {"date": "2026-07-08", "phase": "prep", "programDay": 17}, {"date": "2026-07-09", "phase": "prep", "programDay": 18}, {"date": "2026-07-10", "phase": "prep", "programDay": 19}, {"date": "2026-07-11", "phase": "prep", "programDay": 20}, {"date": "2026-07-12", "phase": "prep", "programDay": 21}, {"date": "2026-07-13", "phase": "prep", "programDay": 22}, {"date": "2026-07-14", "phase": "prep", "programDay": 23}, {"date": "2026-07-15", "phase": "prep", "programDay": 24}, {"date": "2026-07-16", "phase": "prep", "programDay": 25}, {"date": "2026-07-17", "phase": "main", "programDay": 1}, {"date": "2026-07-18", "phase": "main", "programDay": 2}, {"date": "2026-07-19", "phase": "main", "programDay": 3}, {"date": "2026-07-20", "phase": "main", "programDay": 4}, {"date": "2026-07-21", "phase": "main", "programDay": 5}, {"date": "2026-07-22", "phase": "main", "programDay": 6}, {"date": "2026-07-23", "phase": "main", "programDay": 7}, {"date": "2026-07-24", "phase": "main", "programDay": 8}, {"date": "2026-07-25", "phase": "main", "programDay": 9}, {"date": "2026-07-26", "phase": "main", "programDay": 10}, {"date": "2026-07-27", "phase": "main", "programDay": 11}, {"date": "2026-07-28", "phase": "main", "programDay": 12}, {"date": "2026-07-29", "phase": "main", "programDay": 13}, {"date": "2026-07-30", "phase": "main", "programDay": 14}, {"date": "2026-07-31", "phase": "main", "programDay": 15}, {"date": "2026-08-01", "phase": "main", "programDay": 16}, {"date": "2026-08-02", "phase": "main", "programDay": 17}, {"date": "2026-08-03", "phase": "main", "programDay": 18}, {"date": "2026-08-04", "phase": "main", "programDay": 19}, {"date": "2026-08-05", "phase": "main", "programDay": 20}, {"date": "2026-08-06", "phase": "main", "programDay": 21}, {"date": "2026-08-07", "phase": "main", "programDay": 22}, {"date": "2026-08-08", "phase": "main", "programDay": 23}, {"date": "2026-08-09", "phase": "main", "programDay": 24}, {"date": "2026-08-10", "phase": "main", "programDay": 25}, {"date": "2026-08-11", "phase": "main", "programDay": 26}, {"date": "2026-08-12", "phase": "main", "programDay": 27}, {"date": "2026-08-13", "phase": "main", "programDay": 28}, {"date": "2026-08-14", "phase": "main", "programDay": 29}, {"date": "2026-08-15", "phase": "main", "programDay": 30}, {"date": "2026-08-16", "phase": "main", "programDay": 31}, {"date": "2026-08-17", "phase": "main", "programDay": 32}, {"date": "2026-08-18", "phase": "main", "programDay": 33}, {"date": "2026-08-19", "phase": "main", "programDay": 34}, {"date": "2026-08-20", "phase": "main", "programDay": 35}, {"date": "2026-08-21", "phase": "main", "programDay": 36}, {"date": "2026-08-22", "phase": "main", "programDay": 37}, {"date": "2026-08-23", "phase": "main", "programDay": 38}, {"date": "2026-08-24", "phase": "main", "programDay": 39}, {"date": "2026-08-25", "phase": "main", "programDay": 40}, {"date": "2026-08-26", "phase": "main", "programDay": 41}, {"date": "2026-08-27", "phase": "main", "programDay": 42}, {"date": "2026-08-28", "phase": "main", "programDay": 43}, {"date": "2026-08-29", "phase": "main", "programDay": 44}, {"date": "2026-08-30", "phase": "main", "programDay": 45}, {"date": "2026-08-31", "phase": "main", "programDay": 46}, {"date": "2026-09-01", "phase": "main", "programDay": 47}, {"date": "2026-09-02", "phase": "main", "programDay": 48}, {"date": "2026-09-03", "phase": "main", "programDay": 49}, {"date": "2026-09-04", "phase": "main", "programDay": 50}, {"date": "2026-09-05", "phase": "main", "programDay": 51}, {"date": "2026-09-06", "phase": "main", "programDay": 52}, {"date": "2026-09-07", "phase": "main", "programDay": 53}, {"date": "2026-09-08", "phase": "main", "programDay": 54}, {"date": "2026-09-09", "phase": "main", "programDay": 55}, {"date": "2026-09-10", "phase": "main", "programDay": 56}, {"date": "2026-09-11", "phase": "main", "programDay": 57}, {"date": "2026-09-12", "phase": "main", "programDay": 58}, {"date": "2026-09-13", "phase": "main", "programDay": 59}, {"date": "2026-09-14", "phase": "main", "programDay": 60}, {"date": "2026-09-15", "phase": "main", "programDay": 61}, {"date": "2026-09-16", "phase": "main", "programDay": 62}, {"date": "2026-09-17", "phase": "main", "programDay": 63}, {"date": "2026-09-18", "phase": "main", "programDay": 64}, {"date": "2026-09-19", "phase": "main", "programDay": 65}, {"date": "2026-09-20", "phase": "main", "programDay": 66}, {"date": "2026-09-21", "phase": "main", "programDay": 67}, {"date": "2026-09-22", "phase": "main", "programDay": 68}, {"date": "2026-09-23", "phase": "main", "programDay": 69}, {"date": "2026-09-24", "phase": "main", "programDay": 70}, {"date": "2026-09-25", "phase": "main", "programDay": 71}, {"date": "2026-09-26", "phase": "main", "programDay": 72}, {"date": "2026-09-27", "phase": "main", "programDay": 73}, {"date": "2026-09-28", "phase": "main", "programDay": 74}, {"date": "2026-09-29", "phase": "main", "programDay": 75}, {"date": "2026-09-30", "phase": "main", "programDay": 76}, {"date": "2026-10-01", "phase": "main", "programDay": 77}, {"date": "2026-10-02", "phase": "main", "programDay": 78}, {"date": "2026-10-03", "phase": "main", "programDay": 79}, {"date": "2026-10-04", "phase": "main", "programDay": 80}, {"date": "2026-10-05", "phase": "main", "programDay": 81}, {"date": "2026-10-06", "phase": "main", "programDay": 82}, {"date": "2026-10-07", "phase": "main", "programDay": 83}, {"date": "2026-10-08", "phase": "main", "programDay": 84}, {"date": "2026-10-09", "phase": "main", "programDay": 85}, {"date": "2026-10-10", "phase": "main", "programDay": 86}, {"date": "2026-10-11", "phase": "main", "programDay": 87}, {"date": "2026-10-12", "phase": "main", "programDay": 88}, {"date": "2026-10-13", "phase": "main", "programDay": 89}, {"date": "2026-10-14", "phase": "main", "programDay": 90}, {"date": "2026-10-15", "phase": "main", "programDay": 91}, {"date": "2026-10-16", "phase": "main", "programDay": 92}, {"date": "2026-10-17", "phase": "main", "programDay": 93}, {"date": "2026-10-18", "phase": "main", "programDay": 94}, {"date": "2026-10-19", "phase": "main", "programDay": 95}, {"date": "2026-10-20", "phase": "main", "programDay": 96}, {"date": "2026-10-21", "phase": "main", "programDay": 97}, {"date": "2026-10-22", "phase": "main", "programDay": 98}, {"date": "2026-10-23", "phase": "main", "programDay": 99}, {"date": "2026-10-24", "phase": "main", "programDay": 100}, {"date": "2026-10-25", "phase": "dday", "programDay": null}];
+
+
+const PROGRAM_MAP = {};
+PROGRAM_DATA.forEach(p => PROGRAM_MAP[p.day] = p);
+
+const SCHEDULE_MAP = {}; // date -> entry
+SCHEDULE.forEach(s => SCHEDULE_MAP[s.date] = s);
+
+const WEEKDAYS = ["일","월","화","수","목","금","토"];
+const MONTH_NAMES = ["1월","2월","3월","4월","5월","6월","7월","8월","9월","10월","11월","12월"];
+
+function pad(n){return n<10?"0"+n:""+n;}
+function toISO(y,m,d){return `${y}-${pad(m+1)}-${pad(d)}`;}
+
+// today reference (fixed simulation date)
+const TODAY_ISO = "2026-06-22";
+
+function buildLaneProgress(){
+  const root = document.getElementById('laneProgress');
+  const total = SCHEDULE.length; // 126
+  let prepCount=0, mainCount=0;
+  SCHEDULE.forEach(s=>{ if(s.phase==='prep') prepCount++; else if(s.phase==='main') mainCount++; });
+  const prepPct = prepCount/total*100;
+  const mainPct = mainCount/total*100;
+  const ddayPct = 100-prepPct-mainPct;
+
+  root.innerHTML = `
+    <div class="seg prep" style="left:0%;width:${prepPct}%">준비 1~25일차</div>
+    <div class="seg main" style="left:${prepPct}%;width:${mainPct}%">본훈련 1~100일차</div>
+    <div class="seg dday" style="left:${prepPct+mainPct}%;width:${ddayPct}%">D-DAY</div>
+  `;
+  // today marker
+  const todayIdx = SCHEDULE.findIndex(s=>s.date===TODAY_ISO);
+  if(todayIdx>=0){
+    const pct = todayIdx/total*100;
+    const mark = document.createElement('div');
+    mark.className='today-mark';
+    mark.style.left = pct+'%';
+    root.appendChild(mark);
+  }
+}
+
+function phaseTagLabel(phase, programDay){
+  if(phase==='prep') return {cls:'prep', text:`준비 ${programDay}일차`};
+  if(phase==='main') return {cls:'main', text:`본훈련 ${programDay}일차`};
+  if(phase==='dday') return {cls:'dday', text:'D-DAY'};
+  return {cls:'prep', text:''};
+}
+
+function getDayContent(phase, programDay){
+  if(phase==='dday') return DDAY_INFO;
+  return PROGRAM_MAP[programDay] || {stars:0, title:'', summary:''};
+}
+
+function starString(n){
+  if(!n) return '';
+  return '★'.repeat(n) + '☆'.repeat(5-n);
+}
+
+function isRestDay(title){
+  return title === '휴식' || title === '완전 휴식';
+}
+
+function openModal(dateISO, phase, programDay){
+  const content = getDayContent(phase, programDay);
+  const tag = phaseTagLabel(phase, programDay);
+  const d = new Date(dateISO+'T00:00:00');
+  const label = `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 (${WEEKDAYS[d.getDay()]})`;
+
+  document.getElementById('mDate').textContent = label;
+  const tagEl = document.getElementById('mTag');
+  tagEl.textContent = tag.text;
+  tagEl.className = 'm-tag tag-'+tag.cls;
+  document.getElementById('mTitle').textContent = content.title || '';
+  document.getElementById('mStars').textContent = content.stars ? starString(content.stars) : '';
+  document.getElementById('mSummary').textContent = content.summary || '';
+
+  let note = '';
+  if(phase==='prep') note = PREP_NOTE;
+  if(phase==='main' && isRestDay(content.title)) note = '회복에 집중하는 날입니다. 가벼운 스트레칭 외 추가 훈련은 권장하지 않습니다.';
+  document.getElementById('mNote').textContent = note;
+
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal(){
+  document.getElementById('modalOverlay').classList.remove('open');
+}
+document.getElementById('closeBtn').addEventListener('click', closeModal);
+document.getElementById('modalOverlay').addEventListener('click', (e)=>{
+  if(e.target.id==='modalOverlay') closeModal();
+});
+
+function buildCalendar(){
+  const root = document.getElementById('calendarRoot');
+  const startDate = new Date(SCHEDULE[0].date+'T00:00:00');
+  const endDate = new Date(SCHEDULE[SCHEDULE.length-1].date+'T00:00:00');
+
+  let cursorY = startDate.getFullYear();
+  let cursorM = startDate.getMonth();
+  const endY = endDate.getFullYear();
+  const endM = endDate.getMonth();
+
+  while(cursorY < endY || (cursorY===endY && cursorM<=endM)){
+    const monthBlock = document.createElement('div');
+    monthBlock.className='month';
+
+    const firstOfMonth = new Date(cursorY, cursorM, 1);
+    const daysInMonth = new Date(cursorY, cursorM+1, 0).getDate();
+    const startWeekday = firstOfMonth.getDay();
+
+    // determine phases present in this month for tag
+    let phasesPresent = new Set();
+    for(let d=1; d<=daysInMonth; d++){
+      const iso = toISO(cursorY,cursorM,d);
+      const entry = SCHEDULE_MAP[iso];
+      if(entry) phasesPresent.add(entry.phase);
+    }
+    let tagHtml = '';
+    if(phasesPresent.has('prep') && phasesPresent.has('main')){
+      tagHtml = `<span class="phase-tag tag-mixed">준비→본훈련 전환</span>`;
+    } else if(phasesPresent.has('prep')){
+      tagHtml = `<span class="phase-tag tag-prep">준비기간</span>`;
+    } else if(phasesPresent.has('main') && phasesPresent.has('dday')){
+      tagHtml = `<span class="phase-tag tag-mixed">본훈련→D-DAY</span>`;
+    } else if(phasesPresent.has('main')){
+      tagHtml = `<span class="phase-tag tag-main">본훈련</span>`;
+    } else if(phasesPresent.has('dday')){
+      tagHtml = `<span class="phase-tag tag-dday">D-DAY</span>`;
+    }
+
+    monthBlock.innerHTML = `<h3 class="month-title">${cursorY}년 ${MONTH_NAMES[cursorM]} ${tagHtml}</h3>`;
+
+    const grid = document.createElement('div');
+    grid.className='cal-grid';
+
+    WEEKDAYS.forEach(wd=>{
+      const wdEl = document.createElement('div');
+      wdEl.className='wd';
+      wdEl.textContent = wd;
+      grid.appendChild(wdEl);
+    });
+
+    for(let i=0;i<startWeekday;i++){
+      const empty = document.createElement('div');
+      empty.className='cell empty';
+      grid.appendChild(empty);
+    }
+
+    for(let d=1; d<=daysInMonth; d++){
+      const iso = toISO(cursorY,cursorM,d);
+      const entry = SCHEDULE_MAP[iso];
+      const cell = document.createElement('div');
+      const weekdayIdx = new Date(cursorY,cursorM,d).getDay();
+
+      if(!entry){
+        cell.className='cell empty';
+        grid.appendChild(cell);
+        continue;
+      }
+
+      const content = getDayContent(entry.phase, entry.programDay);
+      const isRest = isRestDay(content.title);
+      let cls = 'cell ' + entry.phase;
+      if(isRest) cls = 'cell rest';
+      cell.className = cls;
+
+      const isWeekend = weekdayIdx===0 || weekdayIdx===6;
+      const dayTagText = entry.phase==='dday' ? 'D-DAY' : (entry.phase==='prep' ? `준비 ${entry.programDay}일` : `${entry.programDay}일차`);
+
+      cell.innerHTML = `
+        <div class="date-num ${isWeekend?'weekend':''}">${d}</div>
+        <div class="day-tag">${dayTagText}</div>
+        ${content.stars ? `<div class="stars">${starString(content.stars)}</div>` : ''}
+        <div class="title">${content.title||''}</div>
+        ${iso===TODAY_ISO ? '<div class="today-badge">TODAY</div>' : ''}
+      `;
+      cell.addEventListener('click', ()=>openModal(iso, entry.phase, entry.programDay));
+      grid.appendChild(cell);
+    }
+
+    monthBlock.appendChild(grid);
+    root.appendChild(monthBlock);
+
+    cursorM++;
+    if(cursorM>11){cursorM=0;cursorY++;}
+  }
+}
+
+buildLaneProgress();
+buildCalendar();
+</script>
+</body>
+</html>
